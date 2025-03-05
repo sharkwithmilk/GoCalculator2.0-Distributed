@@ -1,20 +1,25 @@
 package main
 
 import (
+	. "GoCalculator2.0-Distributed/Internal/Orchestrator"
 	"fmt"
 	"log"
 	"net/http"
-	"orchestrator"
+	"os"
 )
 
 func main() {
-	http.HandleFunc("/api/v1/calculate", addExpressionHandler)
-	http.HandleFunc("/api/v1/expressions", getExpressionsHandler)
-	http.HandleFunc("/internal/task", getTaskHandler)
-	http.HandleFunc("/internal/task", submitTaskHandler)
+	http.HandleFunc("/api/v1/calculate", AddExpressionHandler)
+	http.HandleFunc("/api/v1/expressions", GetExpressionsHandler)
+	http.HandleFunc("/api/v1/expressions/", GetExpressionByIDHandler)
+	http.HandleFunc("/internal/task", TaskHandler) // Обрабатывает и GET, и POST
 
-	go createTasks()
+	go CreateTasks()
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 
-	fmt.Println("Оркестратор запущен на порту 8080...")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	fmt.Println("Оркестратор запущен на порту", port)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }

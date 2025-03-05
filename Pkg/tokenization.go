@@ -1,4 +1,4 @@
-package tokenization
+package pkg
 
 import (
 	"fmt"

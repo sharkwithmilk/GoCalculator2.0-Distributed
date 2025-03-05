@@ -1,10 +1,10 @@
 package main
 
 import (
+	. "GoCalculator2.0-Distributed/Internal/Agent"
 	"os"
 	"strconv"
 	"sync"
-	"agent"
 )
 
 func main() {
@@ -13,7 +13,7 @@ func main() {
 		numAgents = 2 // По умолчанию 2 агента
 	}
 
-	baseURL := "http://localhost"
+	baseURL := "http://localhost:8080"
 	wg := &sync.WaitGroup{}
 
 	for i := 1; i <= numAgents; i++ {
