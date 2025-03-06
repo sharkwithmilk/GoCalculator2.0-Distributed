@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Распределенный калькулятор</title>
+    <style>
+        :root {
+            --primary-color: #2ecc71;
+            --secondary-color: #3498db;
+            --error-color: #e74c3c;
+            --background-color: #1a1a1a;
+            --text-color: #ecf0f1;
+            --highlight-number: #27ae60;
+            --highlight-operator: #f39c12;
+            --highlight-parenthesis: #9b59b6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .calculator-form {
+            background: #2c3e50;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .syntax-highlight {
+            position: absolute;
+            top: 50px;
+            left: 0;
+            right: 0;
+            padding: 10px;
+            background: #2c3e50;
+            border-radius: 5px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            background: #34495e;
+            border: 2px solid transparent;
+            border-radius: 5px;
+            color: white;
+            font-size: 1em;
+        }
+
+        .input-group input:valid {
+            border-color: var(--primary-color);
+        }
+
+        .input-group input:invalid {
+            border-color: var(--error-color);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #27ae60;
+        }
+
+        .btn-secondary {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #2980b9;
+        }
+
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status-dropdown {
+            margin: 30px 0;
+        }
+
+        .status-dropdown select {
+            width: 100%;
+            padding: 12px;
+            background: #34495e;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 1em;
+        }
+
+        .expression-list {
+            background: #2c3e50;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .expression-list table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .expression-list th,
+        .expression-list td {
+            padding: 12px;
+            text-align: left;
+        }
+
+        .status {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .status-success {
+            background: var(--primary-color);
+        }
+
+        .status-error {
+            background: var(--error-color);
+        }
+
+        .status-progress {
+            background: #f1c40f;
+        }
+
+        .token.number {
+            color: var(--highlight-number);
+        }
+
+        .token.operator {
+            color: var(--highlight-operator);
+        }
+
+        .token.parenthesis {
+            color: var(--highlight-parenthesis);
+        }
+
+        @media (max-width: 768px) {
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Распределенный калькулятор</h1>
+        </div>
+
+        <div class="calculator-form">
+            <div class="input-group">
+                <label for="expression">Введите выражение:</label>
+                <input type="text" id="expression" pattern="^[0-9+\-*/()\s.]*$" required>
+                <div class="syntax-highlight" id="syntaxHighlight"></div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="submitExpression()" id="submitButton">
+                    Отправить выражение
+                    <div class="loader" id="loader"></div>
+                </button>
+                <button class="btn btn-secondary" onclick="loadExpressions()">Показать все выражения</button>
+            </div>
+
+            <div class="status-dropdown" id="statusDropdown" style="display: none;">
+                <select id="expressionSelect" onchange="checkStatus()">
+                    <option value="">Выберите выражение</option>
+                </select>
+            </div>
+
+            <div id="statusMessage" class="status"></div>
+        </div>
+
+        <div class="expression-list" id="expressionList" style="display: none;">
+            <h3>Все выражения:</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Выражение</th>
+                        <th>Статус</th>
+                        <th>Результат</th>
+                    </tr>
+                </thead>
+                <tbody id="expressionsTable">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let currentExpressionId = null;
+        let checkStatusInterval = null;
+
+        const tokenRegex = /(\d+\.?\d*)|([+\-*/])|([()])|(.)/g;
+
+        document.getElementById('expression').addEventListener('input', (e) => {
+            const value = e.target.value;
+            const syntaxHighlight = document.getElementById('syntaxHighlight');
+            
+            // Проверка на недопустимые символы
+            if (!/^[0-9+\-*/()\s.]*$/.test(value)) {
+                e.target.setCustomValidity('Допустимы только цифры, операторы и скобки');
+                syntaxHighlight.style.opacity = 0;
+                return;
+            } else {
+                e.target.setCustomValidity('');
+            }
+
+            // Проверка деления на ноль
+            if (/(?<!\d)\/0(?!\d)/.test(value)) {
+                e.target.setCustomValidity('Деление на ноль запрещено');
+                syntaxHighlight.style.opacity = 0;
+                return;
+            }
+
+            // Подсветка синтаксиса
+            const tokens = value.match(tokenRegex);
+            let html = '';
+            tokens.forEach(token => {
+                if (token.match(/^\d+\.?\d*$/)) {
+                    html += `<span class="token number">${token}</span>`;
+                } else if (token.match(/^[+\-*/]$/)) {
+                    html += `<span class="token operator">${token}</span>`;
+                } else if (token.match(/^[()]$/)) {
+                    html += `<span class="token parenthesis">${token}</span>`;
+                } else {
+                    html += token;
+                }
+            });
+            syntaxHighlight.innerHTML = html;
+            syntaxHighlight.style.opacity = value ? 1 : 0;
+        });
+
+        async function submitExpression() {
+            const input = document.getElementById('expression');
+            if (!input.checkValidity()) {
+                input.reportValidity();
+                return;
+            }
+
+            const loader = document.getElementById('loader');
+            const submitButton = document.getElementById('submitButton');
+            
+            loader.style.display = 'block';
+            submitButton.disabled = true;
+
+            const expression = input.value;
+            try {
+                const response = await fetch('/api/v1/calculate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ expression })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentExpressionId = data.id;
+                    showStatusMessage('progress', 'Вычисление начато...');
+                    checkStatusInterval = setInterval(checkStatus, 2000);
+                } else {
+                    const errorData = await response.json();
+                    showStatusMessage('error', errorData.error || 'Ошибка при отправке');
+                }
+            } catch (error) {
+                showStatusMessage('error', 'Сетевая ошибка');
+            } finally {
+                loader.style.display = 'none';
+                submitButton.disabled = false;
+            }
+        }
+
+        async function checkStatus() {
+            if (!currentExpressionId) return;
+
+            try {
+                const response = await fetch(`/api/v1/expressions/${currentExpressionId}`);
+                const data = await response.json();
+
+                if (data.status === 'completed') {
+                    clearInterval(checkStatusInterval);
+                    showStatusMessage('success', `Результат: ${data.result}`);
+                    currentExpressionId = null;
+                } else if (data.status === 'failed') {
+                    clearInterval(checkStatusInterval);
+                    showStatusMessage('error', data.error || 'Ошибка вычисления');
+                    currentExpressionId = null;
+                }
+            } catch (error) {
+                showStatusMessage('error', 'Ошибка при проверке статуса');
+            }
+        }
+
+        async function loadExpressions() {
+            try {
+                const response = await fetch('/api/v1/expressions');
+                const data = await response.json();
+
+                const tableBody = document.getElementById('expressionsTable');
+                tableBody.innerHTML = '';
+
+                data.forEach(expr => {
+                    const row = `
+                        <tr>
+                            <td>${expr.id}</td>
+                            <td>${expr.expression}</td>
+                            <td>${expr.status}</td>
+                            <td>${expr.result !== null ? expr.result : '—'}</td>
+                        </tr>
+                    `;
+                    tableBody.innerHTML += row;
+                });
+
+                document.getElementById('expressionList').style.display = 'block';
+            } catch (error) {
+                alert('Ошибка при загрузке выражений');
+            }
+        }
+
+        function showStatusMessage(type, message) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            statusDiv.className = `status status-${type}`;
+        }
+    </script>
+</body>
+</html>
