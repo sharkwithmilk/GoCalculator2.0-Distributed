@@ -131,8 +131,8 @@ $env:TIME_DIVISION_MS = 250
 ### Клонирование репозитория
 
 ```bash
-git clone https://github.com/your_username/web-calculator.git
-cd web-calculator
+git clone https://github.com/sharkwithmilk/GoCalculator2.0-Distributed
+cd GoCalculator2.0-Distributed
 ```
 
 ### Запуск с помощью Docker Compose
