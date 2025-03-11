@@ -258,6 +258,8 @@
     </div>
 
     <script>
+        const API_BASE_URL = 'http://localhost:8080';
+        
         let currentExpressionId = null;
         let checkStatusInterval = null;
 
@@ -316,7 +318,7 @@
 
             const expression = input.value;
             try {
-                const response = await fetch('/api/v1/calculate', {
+                const response = await fetch(`${API_BASE_URL}/api/v1/calculate`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ expression })
@@ -343,7 +345,7 @@
             if (!currentExpressionId) return;
 
             try {
-                const response = await fetch(`/api/v1/expressions/${currentExpressionId}`);
+                const response = await fetch(`${API_BASE_URL}/api/v1/expressions/${currentExpressionId}`);
                 const data = await response.json();
 
                 if (data.status === 'completed') {
@@ -362,7 +364,7 @@
 
         async function loadExpressions() {
             try {
-                const response = await fetch('/api/v1/expressions');
+                const response = await fetch(`${API_BASE_URL}/api/v1/expressions`);
                 const data = await response.json();
 
                 const tableBody = document.getElementById('expressionsTable');
